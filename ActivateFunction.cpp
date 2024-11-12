@@ -36,11 +36,11 @@ void ActivateFunction::use(double* value, unsigned short n)
 	case activate_function::thx:
 		for (int i = 0; i < n; i++)
 		{
-			if (value[i] < 0) 
+			if (value[i] < 0)
 			{
 				value[i] = 0.01 * (exp(value[i]) - exp(-value[i])) / (exp(value[i]) + exp(-value[i]));
 			}
-			else 
+			else
 			{
 				value[i] = (exp(value[i]) - exp(-value[i])) / (exp(value[i]) + exp(-value[i]));
 			}
@@ -56,7 +56,7 @@ void ActivateFunction::Derivate(double* value, unsigned short n)
 	switch (actFunc)
 	{
 	case activate_function::sigmoid:
-		for (int i = 0; i < n; i++) 
+		for (int i = 0; i < n; i++)
 		{
 			value[i] = value[i] * (1 - value[i]);
 		}
