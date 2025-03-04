@@ -1,6 +1,7 @@
 #pragma once
 #include "ActivateFunction.h"
 #include "Matrix.h"
+#include <fstream>
 using namespace std;
 struct data_NetWork
 {
@@ -31,4 +32,3 @@ public:
 	void SaveWeight();
 	void ReadWeight();
 };
-

@@ -104,7 +104,98 @@ void NetWork::BackPropogation(double expect)
 	{
 		if (i != int(expect))
 		{
-			neuron_error[Layer - 1][i] = -neurons_val[Layer - 1][i] * actFunc.Derivate(neurons_val);
+			neuron_error[Layer - 1][i] = -neurons_val[Layer - 1][i] * actFunc.Derivate(neurons_val[Layer][i]);
+		}
+		else
+		{
+			neuron_error[Layer - 1][i] = (1.0 - neurons_val[Layer - 1][i]) * actFunc.Derivate(neurons_val[Layer][i]);
 		}
 	}
+
+	for (int k = Layer - 2; k > 0; k--)
+	{
+		Matrix::MultiT(weights[k], neuron_error[k + 1], size[k + 1], neuron_error[k]);
+		
+		for (int j = 0; j < size[k]; j++)
+		{
+			neuron_error[k][j] *= actFunc.Derivate(neurons_val[k][j]);
+		}
+	}
+}
+
+void NetWork::WeightsUpdater(double lr)
+{
+	for (int i = 0; i < Layer - 1; ++i)
+	{
+		for (int j = 0; j < size[i + 1]; ++j)
+		{
+			for (int k = 0; k < size[i]; ++k)
+			{
+				weights[i](j, k) += neurons_val[i][k] * neuron_error[i + 1][j] * lr;
+			}
+		}
+	}
+
+	for (int i = 0; i < Layer - 1; i++)
+	{
+		for (int k = 0; k < size[i + 1]; k++)
+		{
+			bios[i][k] += neuron_error[i + 1][k] * lr;
+		}
+	}
+}
+
+void NetWork::SaveWeight()
+{
+	ofstream fout;
+	fout.open("Weights.txt");
+	if (!fout.is_open())
+	{
+		cout << "Error reading the file .txt";
+		system("pause");
+	}
+	else
+	{
+		for (int i = 0; i < Layer - 1; ++i)
+		{
+			fout << weights[i] << " ";
+		}
+		for (int i = 0; i < Layer - 1; ++i)
+		{
+			for (int j = 0; j < size[i + 1]; ++j)
+			{
+				fout << bios[i][j] << " ";
+			}
+		}
+	}
+	cout << "Weights saved \n";
+	fout.close();
+}
+
+void NetWork::ReadWeight()
+{
+	ifstream fin;
+	fin.open("Weights.txt");
+	if (!fin.is_open())
+	{
+		cout << "Error reading the file .txt";
+		system("pause");
+	}
+	else
+	{
+		for (int i = 0; i < Layer - 1; ++i)
+		{
+			fin >> weights[i];
+		}
+
+		for (int i = 0; i < Layer - 1; ++i)
+		{
+			for (int j = 0; j < size[i + 1]; ++j)
+			{
+				fin >> bios[i][j];
+			}
+		}
+	}
+	cout << "Weights readed \n";
+	fin.close();
 }

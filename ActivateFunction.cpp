@@ -7,13 +7,13 @@ void ActivateFunction::set()
 	switch (tmp)
 	{
 	case sigmoid:
-		actFunc = sigmoid;
+		activateFunc = sigmoid;
 		break;
 	case ReLU:
-		actFunc = ReLU;
+		activateFunc = ReLU;
 		break;
 	case thx:
-		actFunc = thx;
+		activateFunc = thx;
 		break;
 	default:
 		throw std::runtime_error("Error read activate function");
@@ -22,7 +22,7 @@ void ActivateFunction::set()
 }
 void ActivateFunction::use(double* value, unsigned short n)
 {
-	switch (actFunc)
+	switch (activateFunc)
 	{
 	case activate_function::sigmoid:
 		for (int i = 0; i < n; i++) { value[i] = 1 / (1 + exp(-value[i])); }
@@ -51,9 +51,10 @@ void ActivateFunction::use(double* value, unsigned short n)
 		break;
 	}
 }
-void ActivateFunction::Derivate(double* value, unsigned short n)
+
+void ActivateFunction::UseDerivate(double* value, unsigned short n)
 {
-	switch (actFunc)
+	switch (activateFunc)
 	{
 	case activate_function::sigmoid:
 		for (int i = 0; i < n; i++)
@@ -83,7 +84,7 @@ void ActivateFunction::Derivate(double* value, unsigned short n)
 
 double ActivateFunction::Derivate(double value)
 {
-	switch (actFunc)
+	switch (activateFunc)
 	{
 	case activate_function::sigmoid:
 		value = 1 / (1 + exp(-value));
