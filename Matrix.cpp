@@ -44,3 +44,26 @@ void Matrix::SumVector(double* a, const double* b, unsigned short n)
 		a[i] += b[i];
 	}
 }
+
+void Matrix::MultiT(const Matrix& m1, const double* neuron, int n, double* c)
+{
+	if (m1.row != n)
+	{
+		throw std::runtime_error("Error multi \n");
+	}
+
+	double tmp = 0;
+	for (int i = 0; i < m1.column; ++i)
+	{
+		for (int j = 0; j < m1.row; ++j)
+		{
+			tmp += m1.matrix[i][j] * neuron[j];
+		}
+		c[i] = tmp;
+	}
+}
+
+double& Matrix::operator()(int i, int j)
+{
+	return matrix[i][j];
+}

@@ -80,3 +80,34 @@ void ActivateFunction::Derivate(double* value, unsigned short n)
 		break;
 	}
 }
+
+double ActivateFunction::Derivate(double value)
+{
+	switch (actFunc)
+	{
+	case activate_function::sigmoid:
+		value = 1 / (1 + exp(-value));
+		break;
+	case activate_function::ReLU:
+		if (value < 0 || value > 1)
+		{
+			value = 0.01;
+		}
+		break;
+	case activate_function::thx:
+		if (value < 0)
+		{
+			value = 0.01 * (exp(value) - exp(-value) / exp(value) + exp(-value));
+		}
+		else
+		{
+			value = (exp(value) - exp(-value) / exp(value) + exp(-value));
+		}
+		break;
+	default:
+		throw std::runtime_error("Error activate function! \n");
+		break;
+	}
+
+	return value;
+}

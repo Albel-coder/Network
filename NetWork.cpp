@@ -1,4 +1,5 @@
 #include "NetWork.h"
+
 void NetWork::Initialization(data_NetWork data)
 {
 	actFunc.set();
@@ -33,6 +34,7 @@ void NetWork::Initialization(data_NetWork data)
 		neuron_bios_value[i] = 1;
 	}
 }
+
 void NetWork::printConfig()
 {
 	for (int i = 0; i < 100; i++)
@@ -50,6 +52,7 @@ void NetWork::printConfig()
 	}
 	cout << "\n";
 }
+
 void NetWork::Input(double* values)
 {
 	for (int i = 0; i < size[0]; i++)
@@ -57,6 +60,7 @@ void NetWork::Input(double* values)
 		neurons_val[0][i] = values[i];
 	}
 }
+
 double NetWork::ForwardFeed()
 {
 	for (int k = 1; k < Layer; k++)
@@ -68,6 +72,7 @@ double NetWork::ForwardFeed()
 	int predict = SearchMaxIndex(neurons_val[Layer - 1]);
 	return predict;
 }
+
 int NetWork::SearchMaxIndex(double* value)
 {
 	double max = value[0];
@@ -84,10 +89,22 @@ int NetWork::SearchMaxIndex(double* value)
 	}
 	return prediction;
 }
+
 void NetWork::PrintValues(int Layer)
 {
 	for (int i = 0; i < size[Layer]; i++)
 	{
 		cout << i << " " << neurons_val[Layer][i] << "\n";
+	}	
+}
+
+void NetWork::BackPropogation(double expect)
+{
+	for (int i = 0; i < size[Layer - 1]; i++)
+	{
+		if (i != int(expect))
+		{
+			neuron_error[Layer - 1][i] = -neurons_val[Layer - 1][i] * actFunc.Derivate(neurons_val);
+		}
 	}
 }
