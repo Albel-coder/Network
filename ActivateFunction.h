@@ -9,7 +9,5 @@ public:
 	void set();
 	void use(double* value, unsigned short n);
 	void Derivate(double* value, unsigned short n);
+	double Derivate(double value);
 };
-
-
-

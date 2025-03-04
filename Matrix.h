@@ -9,5 +9,6 @@ public:
 	void Rand();
 	static void Multi(const Matrix& m, const double* b, unsigned short n, double* c);
 	static void SumVector(double* a, const double* b, unsigned short n);
+	static void MultiT(const Matrix& m1, const double* neuron, int n, double* c);
+	double& operator ()(int i, int j);
 };
-
