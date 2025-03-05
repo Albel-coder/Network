@@ -185,7 +185,7 @@ void NetWork::ReadWeight()
 	{
 		for (int i = 0; i < Layer - 1; ++i)
 		{
-			fin >> weights[i];
+			fin >> weights[i](0, 0);
 		}
 
 		for (int i = 0; i < Layer - 1; ++i)
