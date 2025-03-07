@@ -1,5 +1,6 @@
 ﻿#include "NetWork.h"
 #include <chrono>
+#include <math.h>
 
 struct data_info
 {
@@ -21,7 +22,7 @@ data_NetWork ReadDataNetWork(string path)
         cout << path << "loading...\n";
     }
     string tmp;
-    unsigned short L;
+    int L;
     while (!fin.eof())
     {
         fin >> tmp;
@@ -29,7 +30,7 @@ data_NetWork ReadDataNetWork(string path)
         {
             fin >> L;
             data.Layer = L;
-            data.size = new unsigned short[L];
+            data.size = new int[L];
             for (int i = 0; i < L; i++)
             {
                 fin >> data.size[i];
@@ -52,7 +53,7 @@ data_info* ReadData(string path, const data_NetWork& data_NW, int& examples)
     }
     else
     {
-        cout << path << "loading...\n";
+        cout << path << " loading...\n";
     }
     string tmp;
     fin >> tmp;
@@ -68,19 +69,20 @@ data_info* ReadData(string path, const data_NetWork& data_NW, int& examples)
 
         for (int i = 0; i < examples; ++i)
         {
-            fin >> data[i].digit;
+            fin >> data[i].digit;            
             for (int j = 0; j < data_NW.size[0]; ++j)
             {
                 fin >> data[i].pixels[j];
+                data[i].digit /= 5;
             }
         }
         fin.close();
-        cout << "lib_MNIST loaded... \n";
+        cout << " lib_MNIST loaded... \n";
         return data;
     }
     else
     {
-        cout << "Error loading:" << path << "\n";
+        cout << "Error loading: " << path << "\n";
         fin.close();
         return nullptr;
     }
@@ -107,7 +109,7 @@ int main()
         if (study)
         {
             int examples;
-            data = ReadData("lib_MNIST_edit.txt", NW_config, examples);
+            data = ReadData("lib_MNIST_edit.csv", NW_config, examples);
             auto start = chrono::steady_clock::now();
             while (ra / examples * 100 < 100)
             {
@@ -132,13 +134,19 @@ int main()
                 time = t2 - t1;
                 if (ra > maxra)
                 {
-                    cout << "ra: " << ra / examples * 100 << "\t" << "maxra: " << maxra / 100 << "time: ";
-                }
-                auto end = chrono::steady_clock::now();
-                time = end - start;
-                cout << "TIME: " << time.count() / 60. << "min \n";
-                NW.SaveWeight();
+                    maxra = ra;
+                }      
+                cout << "ra: " << ra / examples * 100 << "\t" << " maxra: " << maxra / examples * 100 << " time: " << time.count() << "\n";
             }
+            epoch++;
+            if (epoch == 1000)
+            {
+                break;
+            }
+            auto end = chrono::steady_clock::now();
+            time = end - start;
+            cout << "TIME: " << time.count() / 60. << " min \n";
+            NW.SaveWeight();
         }
         else
         {
@@ -151,7 +159,7 @@ int main()
         {
             int ex_tests;
             data_info* data_test;
-            data_test = ReadData("lib_10k.txt", NW_config, ex_tests);
+            data_test = ReadData("lib_10k.csv", NW_config, ex_tests);
             ra = 0;
             for (int i = 0; i < ex_tests; ++i)
             {

@@ -23,7 +23,7 @@ void Matrix::Rand()
 		}
 	}
 }
-void Matrix::Multi(const Matrix& m1, const double* neuron, unsigned short n, double* c)
+void Matrix::Multi(const Matrix& m1, const double* neuron, int n, double* c)
 {
 	if (m1.column != n) { throw std::runtime_error("matrix multiplication error \n"); }
 
@@ -37,7 +37,7 @@ void Matrix::Multi(const Matrix& m1, const double* neuron, unsigned short n, dou
 		c[i] = tmp;
 	}
 }
-void Matrix::SumVector(double* a, const double* b, unsigned short n)
+void Matrix::SumVector(double* a, const double* b, int n)
 {
 	for (int i = 0; i < n; i++)
 	{
@@ -57,7 +57,7 @@ void Matrix::MultiT(const Matrix& m1, const double* neuron, int n, double* c)
 	{
 		for (int j = 0; j < m1.row; ++j)
 		{
-			tmp += m1.matrix[i][j] * neuron[j];
+			tmp += m1.matrix[j][i] * neuron[j];
 		}
 		c[i] = tmp;
 	}
