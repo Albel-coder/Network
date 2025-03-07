@@ -5,8 +5,8 @@
 using namespace std;
 struct data_NetWork
 {
-	unsigned short Layer;
-	unsigned short* size;
+	int Layer;
+	int* size;
 };
 class NetWork
 {
