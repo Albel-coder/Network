@@ -37,7 +37,7 @@ void NetWork::Initialization(data_NetWork data)
 
 void NetWork::printConfig()
 {
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 50; i++)
 	{
 		cout << "*";
 	}
@@ -46,7 +46,8 @@ void NetWork::printConfig()
 	{
 		cout << size[i] << " ";
 	}
-	for (int i = 0; i < 100; i++)
+	cout << "\n";
+	for (int i = 0; i < 50; i++)
 	{
 		cout << "*";
 	}
@@ -104,11 +105,11 @@ void NetWork::BackPropogation(double expect)
 	{
 		if (i != int(expect))
 		{
-			neuron_error[Layer - 1][i] = -neurons_val[Layer - 1][i] * actFunc.Derivate(neurons_val[Layer][i]);
+			neuron_error[Layer - 1][i] = -neurons_val[Layer - 1][i] * actFunc.Derivate(neurons_val[Layer - 1][i]);
 		}
 		else
 		{
-			neuron_error[Layer - 1][i] = (1.0 - neurons_val[Layer - 1][i]) * actFunc.Derivate(neurons_val[Layer][i]);
+			neuron_error[Layer - 1][i] = (1.0 - neurons_val[Layer - 1][i]) * actFunc.Derivate(neurons_val[Layer - 1][i]);
 		}
 	}
 
