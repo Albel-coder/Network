@@ -1,93 +1,101 @@
 #include "Matrix.h"
-void Matrix::Initialization(unsigned short row, unsigned short column)
-{
-	this->row = row; this->column = column;
-	matrix = new double* [row];
-	for (int i = 0; i < row; i++) { matrix[i] = new double[column]; }
+#include <random>
+#include <stdexcept>
 
-	for (int i = 0; i < row; i++)
-	{
-		for (int j = 0; j < column; j++)
-		{
-			matrix[i][j] = 0;
-		}
-	}
-}
-void Matrix::Rand()
-{
-	for (int i = 0; i < row; i++)
-	{
-		for (int j = 0; j < column; j++)
-		{
-			matrix[i][j] = ((rand() % 100) * 0.05 / (column + 45));
-		}
-	}
-}
-void Matrix::Multi(const Matrix& m1, const double* neuron, int n, double* c)
-{
-	if (m1.column != n) { throw std::runtime_error("matrix multiplication error \n"); }
-
-	for (int i = 0; i < m1.row; ++i)
-	{
-		double tmp = 0;
-		for (int j = 0; j < m1.column; ++j)
-		{
-			tmp += m1.matrix[i][j] * neuron[j];
-		}
-		c[i] = tmp;
-	}
-}
-void Matrix::SumVector(double* a, const double* b, int n)
-{
-	for (int i = 0; i < n; i++)
-	{
-		a[i] += b[i];
-	}
+Matrix::Matrix(size_type rows, size_type cols, value_type init)
+    : data(rows* cols, init), rows_(rows), cols_(cols) {
+    if (rows == 0 || cols == 0) {
+        data.clear();
+        rows_ = cols_ = 0;
+    }
 }
 
-void Matrix::MultiT(const Matrix& m1, const double* neuron, int n, double* c)
+Matrix::value_type& Matrix::operator()(size_type i, size_type j)
 {
-	if (m1.row != n)
-	{
-		throw std::runtime_error("Error multi \n");
-	}
+    if (i >= rows_ || j >= cols_) 
+        throw std::out_of_range("Matrix index out of range");
 
-	double tmp = 0;
-	for (int i = 0; i < m1.column; ++i)
-	{
-		for (int j = 0; j < m1.row; ++j)
-		{
-			tmp += m1.matrix[j][i] * neuron[j];
-		}
-		c[i] = tmp;
-	}
+    return data[i * cols_ + j];
 }
 
-double& Matrix::operator()(int i, int j)
-{
-	return matrix[i][j];
+const Matrix::value_type& Matrix::operator()(size_type i, size_type j) const {
+    return data[i * cols_ + j];
 }
 
-std::ostream& operator<<(std::ostream& os, const Matrix& m)
-{
-	for (int i = 0; i < m.row; ++i)
-	{
-		for (int j = 0; j < m.column; j++)
-		{
-			os << m.matrix[i][j] << " ";
-		}
-	}
-	return os;
+void Matrix::random() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_real_distribution<value_type> dis(0.0, 1.0);
+
+    for (auto& val : data) {
+        val = dis(gen);
+    }
 }
 
-std::istream& operator>>(std::istream is, Matrix& m)
-{
-	for (int i = 0; i < m.row; ++i)
-	{
-		for (int j = 0; j < m.column; j++)
-		{
-			is >> m.matrix[i][j];
-		}
-	}
-	return is;
+std::vector<Matrix::value_type> Matrix::multiply(const std::vector<value_type>& vec) const {
+    if (cols_ != vec.size()) {
+        throw std::runtime_error("Matrix multiply: dimension mismatch");
+    }
+    std::vector<value_type> result(rows_, value_type{});
+
+    for (size_type i = 0; i < rows_; ++i) {
+        value_type sum = 0;
+
+        for (size_type j = 0; j < cols_; ++j) {
+            sum += data[i * cols_ + j] * vec[j];
+        }
+        result[i] = sum;
+    }
+
+    return result;
+}
+
+std::vector<Matrix::value_type> Matrix::multiply_transposed(const std::vector<value_type>& vec) const {
+    if (rows_ != vec.size()) {
+        throw std::runtime_error("Matrix multiply_transposed: dimension mismatch");
+    }
+    std::vector<value_type> result(cols_, value_type{});
+
+    for (size_type j = 0; j < cols_; ++j) {
+        value_type sum = 0;
+
+        for (size_type i = 0; i < rows_; ++i) {
+            sum += data[i * cols_ + j] * vec[i];
+        }
+        result[j] = sum;
+    }
+
+    return result;
+}
+
+void Matrix::add_to_vector(std::vector<value_type>& a, const std::vector<value_type>& b) {
+    if (a.size() != b.size()) {
+        throw std::runtime_error("add_to_vector: size mismatch");
+    }
+
+    for (size_type i = 0; i < a.size(); ++i) {
+        a[i] += b[i];
+    }
+}
+
+std::ostream& operator<<(std::ostream& os, const Matrix& m) {
+    for (Matrix::size_type i = 0; i < m.rows_; ++i) {
+        for (Matrix::size_type j = 0; j < m.cols_; ++j) {
+            os << m.data[i * m.cols_ + j] << ' ';
+        }
+        os << '\n';
+    }
+
+    return os;
+}
+
+std::istream& operator>>(std::istream& is, Matrix& m) {
+    for (auto& val : m.data) {
+        is >> val;
+        if (!is) {
+            break;
+        }
+    }
+
+    return is;
 }
