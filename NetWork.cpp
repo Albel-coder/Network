@@ -96,7 +96,7 @@ void NetWork::PrintValues(int Layer)
 	for (int i = 0; i < size[Layer]; i++)
 	{
 		cout << i << " " << neurons_val[Layer][i] << "\n";
-	}	
+	}
 }
 
 void NetWork::BackPropogation(double expect)
@@ -116,7 +116,7 @@ void NetWork::BackPropogation(double expect)
 	for (int k = Layer - 2; k > 0; k--)
 	{
 		Matrix::MultiT(weights[k], neuron_error[k + 1], size[k + 1], neuron_error[k]);
-		
+
 		for (int j = 0; j < size[k]; j++)
 		{
 			neuron_error[k][j] *= actFunc.Derivate(neurons_val[k][j]);
