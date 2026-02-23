@@ -1,34 +1,51 @@
 #pragma once
-#include "ActivateFunction.h"
+
 #include "Matrix.h"
+#include "ActivateFunction.h"
+#include <vector>
 #include <fstream>
-using namespace std;
-struct data_NetWork
-{
-	int Layer;
-	int* size;
-};
-class NetWork
-{
-	unsigned short Layer;
-	unsigned short* size;
-	ActivateFunction actFunc;
-	Matrix* weights;
-	double** bios;
-	double** neurons_val, ** neuron_error;
-	double* neuron_bios_value;
+#include <stdexcept>
+#include <random>
+
+class NetWork {
 public:
-	void Initialization(data_NetWork data);
-	void printConfig();
-	void Input(double* values);
+	NetWork(const std::vector<unsigned short>& layerSizes,
+		Activation activateFunction = Activation::Sigmoid,
+		double alpha = 0.01);
 
-	double ForwardFeed();
-	int SearchMaxIndex(double* value);
-	void PrintValues(int Layer);
+	NetWork(const NetWork&) = delete;
+	NetWork& operator=(const NetWork&) = delete;
 
-	void BackPropogation(double expect);
-	void WeightsUpdater(double lr);
+	NetWork(NetWork&&) = default;
+	NetWork& operator=(NetWork&&) = default;
 
-	void SaveWeight();
-	void ReadWeight();
+	void input(const std::vector<double>& values);
+
+	unsigned short forwardFeed();
+
+	void backPropagation(unsigned short expected);
+
+	void weightUpdater(double learningRate);
+
+	void save(const std::string& filename) const;
+
+	void load(const std::string& filename);
+
+	void printConfig() const;
+
+	void printValues(unsigned short layer) const;
+
+private:
+	std::vector<unsigned short> sizes_;
+	ActivateFunction activateFunction_;
+
+	std::vector<Matrix> weights_;
+	std::vector<std::vector<double>> biases_;
+
+	std::vector<std::vector<double>> neurons_;
+	std::vector<std::vector<double>> errors_;
+
+	unsigned short argMax(const std::vector<double>& vector) const;
+
+	void randomInit();
 };
