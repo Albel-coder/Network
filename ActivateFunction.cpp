@@ -1,114 +1,107 @@
 #include "ActivateFunction.h"
-void ActivateFunction::set()
-{
-	std::cout << "Set activate function\n0 - sigmoid \n1 - ReLU \n2 - th(x) \n";
-	short tmp;
-	std::cin >> tmp;
-	switch (tmp)
-	{
-	case sigmoid:
-		activateFunc = sigmoid;
-		break;
-	case ReLU:
-		activateFunc = ReLU;
-		break;
-	case thx:
-		activateFunc = thx;
-		break;
-	default:
-		throw std::runtime_error("Error read activate function");
-		break;
+
+ActivateFunction::ActivateFunction(Activation type, double alpha)
+	: type_(type), alpha_(alpha)
+{}
+
+void ActivateFunction::setType(Activation type) noexcept {
+	type_ = type;
+}
+
+void ActivateFunction::setAlpha(double alpha) noexcept {
+	alpha_ = alpha;
+}
+
+void ActivateFunction::apply(std::vector<double>& values) const {
+	for (double& x : values) {
+		x = operator()(x);
 	}
 }
-void ActivateFunction::use(double* value, unsigned short n)
-{
-	switch (activateFunc)
-	{
-	case activate_function::sigmoid:
-		for (int i = 0; i < n; i++) { value[i] = 1 / (1 + exp(-value[i])); }
-		break;
-	case activate_function::ReLU:
-		for (int i = 0; i < n; i++)
+
+void ActivateFunction::applyDerivative(std::vector<double>& values) const {
+	for (double& y : values) {
+		switch (type_)
 		{
-			if (value[i] < 0) { value[i] *= 0.01; }
-			else if (value[i] > 1) { value[i] = 1.0 + 0.01 * (value[i] - 1); }
-		}
-	case activate_function::thx:
-		for (int i = 0; i < n; i++)
-		{
-			if (value[i] < 0)
-			{
-				value[i] = 0.01 * (exp(value[i]) - exp(-value[i])) / (exp(value[i]) + exp(-value[i]));
+		case Activation::Sigmoid:
+			y = y * (1.0 - y);
+			break;
+		case Activation::ReLU:
+			if (y < 0.0 || y > 1.0) {
+				y = alpha_;
 			}
-			else
-			{
-				value[i] = (exp(value[i]) - exp(-value[i])) / (exp(value[i]) + exp(-value[i]));
+			else {
+				y = 1.0;
 			}
+			break;
+		case Activation::Tanh:
+			if (y < 0.0) {
+				y = alpha_ * (1.0 - y * y);
+			}
+			else {
+				y = 1.0 - y * y;
+			}
+			break;
+		default:
+			break;
 		}
-		break;
-	default:
-		throw std::runtime_error("Error activate function\n");
-		break;
 	}
 }
 
-void ActivateFunction::UseDerivate(double* value, unsigned short n)
-{
-	switch (activateFunc)
+double ActivateFunction::operator()(double x) const noexcept {
+	switch (type_)
 	{
-	case activate_function::sigmoid:
-		for (int i = 0; i < n; i++)
-		{
-			value[i] = value[i] * (1 - value[i]);
+	case Activation::Sigmoid:
+		return 1.0 / (1.0 + std::exp(-x));
+	case Activation::ReLU:
+		if (x < 0.0) {
+			return x * alpha_;
 		}
-		break;
-	case activate_function::ReLU:
-		for (int i = 0; i < n; i++)
-		{
-			if (value[i] < 0 || value[i] > 1) { value[i] = 0.01; }
-			else { value[i] = 1; }
+		else if (x <= 1.0) {
+			return x;
 		}
-		break;
-	case activate_function::thx:
-		for (int i = 0; i < n; i++)
-		{
-			if (value[i] < 0) { value[i] = 0.01 * (1 - value[i] * value[i]); }
-			else { value[i] = 1 - value[i] * value[i]; }
+		else {
+			return 1.0 + alpha_ * (x - 1.0);
 		}
-		break;
+	case Activation::Tanh:
+	{
+		double ex = std::exp(x);
+		double emx = std::exp(-x);
+		double tanh_val = (ex - emx) / (ex + emx);
+		if (x < 0.0) {
+			return alpha_ * tanh_val;
+		}
+		else {
+			return tanh_val;
+		}
+	}
 	default:
-		throw std::runtime_error("Error activate function derivate\n");
-		break;
+		return x;
 	}
 }
 
-double ActivateFunction::Derivate(double value)
-{
-	switch (activateFunc)
+double ActivateFunction::derivative(double x) const noexcept {
+	switch (type_)
 	{
-	case activate_function::sigmoid:
-		value = 1 / (1 + exp(-value));
-		break;
-	case activate_function::ReLU:
-		if (value < 0 || value > 1)
-		{
-			value = 0.01;
+	case Activation::Sigmoid:
+		double s = 1.0 / (1.0 + std::exp(-x));
+		return s * (1.0 - s);
+	case Activation::ReLU:
+		if (x < 0.0 || x > 1.0) {
+			return alpha_;
 		}
-		break;
-	case activate_function::thx:
-		if (value < 0)
-		{
-			value = 0.01 * (exp(value) - exp(-value) / exp(value) + exp(-value));
+		else {
+			return 1.0;
 		}
-		else
-		{
-			value = (exp(value) - exp(-value) / exp(value) + exp(-value));
+	case Activation::Tanh:
+		double th = operator()(x);
+		if (x < 0.0) {
+			double tanh_x = th / alpha_;
+			return alpha_ * (1.0 - tanh_x * tanh_x);
 		}
-		break;
+		else {
+			return 1.0 - th * th;
+		}
 	default:
-		throw std::runtime_error("Error activate function! \n");
-		break;
+		return 0.0;
 	}
-
-	return value;
 }
