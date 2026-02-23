@@ -1,13 +1,31 @@
 #pragma once
-#include <iostream>
-enum activate_function { sigmoid = 1, ReLU, thx };
 
-class ActivateFunction
-{
-	activate_function activateFunc;
+#include <vector>
+#include <cmath>
+#include <stdexcept>
+
+enum class Activation {
+	Sigmoid,
+	ReLU,
+	Tanh
+};
+
+class ActivateFunction {
 public:
-	void set();
-	void use(double* value, unsigned short n);
-	void UseDerivate(double* value, unsigned short n);
-	double Derivate(double value);
+
+	explicit ActivateFunction(Activation type = Activation::Sigmoid, double alpha);
+
+	void setType(Activation type) noexcept;
+	void setAlpha(double alpha) noexcept;
+
+	void apply(std::vector<double>& values) const;
+
+	void applyDerivative(std::vector<double>& values) const;
+
+	double operator()(double x) const noexcept;
+	double derivative(double x) const noexcept;
+
+private:
+	Activation type_;
+	double alpha_;
 };
