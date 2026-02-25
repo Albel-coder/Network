@@ -1,183 +1,171 @@
 ﻿#include "NetWork.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
 #include <chrono>
-#include <math.h>
+#include <random>
+#include <algorithm>
 
-struct data_info
-{
-    double* pixels;
-    int digit;
+using namespace std;
+
+// Structure for storing one example (label + pixels)
+struct Example {
+    int label;
+    vector<double> pixels;
 };
 
-data_NetWork ReadDataNetWork(string path)
-{
-    data_NetWork data{};
-    ifstream fin;
-    fin.open(path);
+// Reading network configuration from file
+vector<unsigned short> readConfig(const string& path) {
+    ifstream fin(path);
     if (!fin.is_open())
-    {
-        cout << "Error reading the file" << path << "\n";
-        system("pause");
+        throw runtime_error("Cannot open config file: " + path);
+
+    string token;
+    fin >> token;
+    if (token != "NetWork")
+        throw runtime_error("Invalid config format: expected 'NetWork'");
+
+    int layers;
+    fin >> layers;
+    if (layers < 2)
+        throw runtime_error("Network must have at least 2 layers");
+
+    vector<unsigned short> sizes(layers);
+    for (int i = 0; i < layers; ++i) {
+        int s;
+        fin >> s;
+        if (s <= 0)
+            throw runtime_error("Invalid layer size");
+        sizes[i] = static_cast<unsigned short>(s);
     }
-    else
-    {
-        cout << path << "loading...\n";
-    }
-    string tmp;
-    int L;
-    while (!fin.eof())
-    {
-        fin >> tmp;
-        if (tmp == "NetWork")
-        {
-            fin >> L;
-            data.Layer = L;
-            data.size = new int[L];
-            for (int i = 0; i < L; i++)
-            {
-                fin >> data.size[i];
-            }
+    return sizes;
+}
+
+// Reading data (training or testing) from a CSV file
+vector<Example> readData(const string& path, size_t inputSize) {
+    ifstream fin(path);
+    if (!fin.is_open())
+        throw runtime_error("Cannot open data file: " + path);
+
+    string token;
+    fin >> token;
+    if (token != "Examples")
+        throw runtime_error("Invalid data format: expected 'Examples'");
+
+    int numExamples;
+    fin >> numExamples;
+    if (numExamples <= 0)
+        throw runtime_error("No examples found");
+
+    vector<Example> data;
+    data.reserve(numExamples);
+
+    for (int i = 0; i < numExamples; ++i) {
+        Example ex;
+        fin >> ex.label;
+
+        ex.pixels.resize(inputSize);
+        for (size_t j = 0; j < inputSize; ++j) {
+            double p;
+            fin >> p;
+            // Normalize pixels to the range [0,1]
+            ex.pixels[j] = p / 255.0;
         }
+        data.push_back(move(ex));
     }
-    fin.close();
+    cout << "Loaded " << data.size() << " examples from " << path << "\n";
     return data;
 }
 
-data_info* ReadData(string path, const data_NetWork& data_NW, int& examples)
-{
-    data_info* data;
-    ifstream fin;
-    fin.open(path);
-    if (!fin.is_open())
-    {
-        cout << "Error reading the file" << path << "\n";
-        system("pause");
+// Calculate the accuracy of the network on the dataset
+double evaluate(NetWork& net, const vector<Example>& dataset) {
+    int correct = 0;
+    for (const auto& ex : dataset) {
+        net.input(ex.pixels);
+        unsigned short pred = net.forwardFeed();
+        if (pred == ex.label)
+            ++correct;
     }
-    else
-    {
-        cout << path << " loading...\n";
-    }
-    string tmp;
-    fin >> tmp;
-    if (tmp == "Examples")
-    {
-        fin >> examples;
-        cout << "Examples: " << examples << "\n";
-        data = new data_info[examples];
-        for (int i = 0; i < examples; i++)
-        {
-            data[i].pixels = new double[data_NW.size[0]];
-        }
-
-        for (int i = 0; i < examples; ++i)
-        {
-            fin >> data[i].digit;            
-            for (int j = 0; j < data_NW.size[0]; ++j)
-            {
-                fin >> data[i].pixels[j];
-                data[i].digit /= 5;
-            }
-        }
-        fin.close();
-        cout << " lib_MNIST loaded... \n";
-        return data;
-    }
-    else
-    {
-        cout << "Error loading: " << path << "\n";
-        fin.close();
-        return nullptr;
-    }
+    return 100.0 * correct / dataset.size();
 }
 
-int main()
-{
-    NetWork NW{};
-    data_NetWork NW_config;
-    data_info* data;
-    double ra = 0, right, predict, maxra = 0;
-    int epoch = 0;
-    bool study, repeat = true;
-    chrono::duration<double> time;
+int main() {
+    try {
+        // Load the network configuration
+        auto sizes = readConfig("Config.txt");
+        NetWork net(sizes, Activation::Sigmoid);  // you can change the activation type
 
-    NW_config = ReadDataNetWork("Config.txt");
-    NW.Initialization(NW_config);
-    NW.printConfig();
+        net.printConfig();
 
-    while (repeat)
-    {
-        cout << "STUDY? (1/0) \n";
-        cin >> study;
-        if (study)
-        {
-            int examples;
-            data = ReadData("lib_MNIST_edit.csv", NW_config, examples);
-            auto start = chrono::steady_clock::now();
-            while (ra / examples * 100 < 100)
-            {
-                ra = 0;
-                auto t1 = chrono::steady_clock::now();
-                for (int i = 0; i < examples; ++i)
-                {
-                    NW.Input(data[i].pixels);
-                    right = data[i].digit;
-                    predict = NW.ForwardFeed();
-                    if (predict != right)
-                    {
-                        NW.BackPropogation(right);
-                        NW.WeightsUpdater(0.15 * exp(-epoch / 20.));
+        // Load training and test data
+        size_t inputSize = sizes[0];
+        auto trainData = readData("lib_MNIST_edit.csv", inputSize);
+        auto testData = readData("lib_10k.csv", inputSize);
+
+        bool repeat = true;
+        while (repeat) {
+            cout << "\nTrain new network? (1 - yes, 0 - load weights): ";
+            int choice;
+            cin >> choice;
+
+            if (choice == 1) {
+                // Studing
+                int epochs;
+                double lr;
+                cout << "Enter number of epochs: ";
+                cin >> epochs;
+                cout << "Enter learning rate: ";
+                cin >> lr;
+
+                auto startTime = chrono::steady_clock::now();
+
+                for (int epoch = 1; epoch <= epochs; ++epoch) {
+                    // Shuffle the data before each epoch (for stochasticity)
+                    shuffle(trainData.begin(), trainData.end(), mt19937(random_device()()));
+
+                    for (const auto& ex : trainData) {
+                        net.input(ex.pixels);
+                        net.forwardFeed();
+                        net.backPropagation(ex.label);
+                        //net.weightsUpdater(lr);
                     }
-                    else
-                    {
-                        ra++;
-                    }
+                    // Evaluation on the test sample after the epoch
+                    double acc = evaluate(net, testData);
+                    auto now = chrono::steady_clock::now();
+                    chrono::duration<double> elapsed = now - startTime;
+                    cout << "Epoch " << epoch << "/" << epochs
+                        << " | Test accuracy: " << acc << "%"
+                        << " | Time: " << elapsed.count() << " s\n";
                 }
-                auto t2 = chrono::steady_clock::now();
-                time = t2 - t1;
-                if (ra > maxra)
-                {
-                    maxra = ra;
-                }      
-                cout << "ra: " << ra / examples * 100 << "\t" << " maxra: " << maxra / examples * 100 << " time: " << time.count() << "\n";
-            }
-            epoch++;
-            if (epoch == 1000)
-            {
-                break;
-            }
-            auto end = chrono::steady_clock::now();
-            time = end - start;
-            cout << "TIME: " << time.count() / 60. << " min \n";
-            NW.SaveWeight();
-        }
-        else
-        {
-            NW.ReadWeight();
-        }
-        cout << "Test? (1/0)\n";
-        bool test_flag;
-        cin >> test_flag;
-        if (test_flag)
-        {
-            int ex_tests;
-            data_info* data_test;
-            data_test = ReadData("lib_10k.csv", NW_config, ex_tests);
-            ra = 0;
-            for (int i = 0; i < ex_tests; ++i)
-            {
-                NW.Input(data_test[i].pixels);
-                predict = NW.ForwardFeed();
-                right = data_test[i].digit;
-                if (right == predict)
-                {
-                    ra++;
-                }                
-            }    
-            cout << "RA: " << ra / ex_tests * 100 << "\n";
-        }
-        cout << "Repeat? (1/0)\n";
-        cin >> repeat;
-    }
 
-    system("pause");
+                // Save weights after training
+                net.save("Weights.txt");
+                cout << "Weights saved to Weights.txt\n";
+            }
+            else {
+                // Loading ready-made weights
+                net.load("Weights.txt");
+                cout << "Weights loaded from Weights.txt\n";
+            }
+
+            // Testing
+            cout << "Run test on test set? (1 - yes, 0 - skip): ";
+            int testChoice;
+            cin >> testChoice;
+            if (testChoice == 1) {
+                double acc = evaluate(net, testData);
+                cout << "Final test accuracy: " << acc << "%\n";
+            }
+
+            cout << "Repeat program? (1 - yes, 0 - exit): ";
+            cin >> repeat;
+        }
+    }
+    catch (const exception& e) {
+        cerr << "Error: " << e.what() << "\n";
+        return 1;
+    }
     return 0;
 }
