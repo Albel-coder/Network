@@ -2,46 +2,47 @@
 #include <random>
 #include <stdexcept>
 
-Matrix::Matrix(size_type rows, size_type cols, value_type init)
-	: data(rows * cols, init), rows_(rows), cols_(cols) {
+Matrix::Matrix(std::size_t rows, std::size_t cols, double init)
+	: data(rows * cols, init), this->rows(rows), this->cols(cols) {
 	
 	if (rows == 0 || cols == 0) {
 		data.clear();
-		rows_ = cols_ = 0;
+		this->rows = 0;
+   this->cols = 0;
 	}
 }
 
-Matrix::value_type& Matrix::operator()(size_type i, size_type j) {
-	if (i >= rows_ || j >= cols_) 
+double& Matrix::operator()(std::size_t i, std::size_t j) {
+	if (i >= this->rows || j >= this->cols) 
 		throw std::out_of_range("Matrix index out of range");
 
-	return data[i * cols_ + j];
+	return data[i * this->cols + j];
 }
 
-const Matrix::value_type& Matrix::operator()(size_type i, size_type j) const {
-	return data[i * cols_ + j];
+const double& Matrix::operator()(std::size_t i, std::size_t j) const {
+	return data[i * this->cols + j];
 }
 
 void Matrix::random() {
-	static std::random_device rd;
-	static std::mt19937 gen(rd());
-	std::uniform_real_distribution<value_type> dis(0.0, 1.0);
+	static std::random_device random;
+	static std::mt19937 gen(random());
+	std::uniform_real_distribution<double> dis(0.0, 1.0);
 
 	for (auto& value : data) {
 		value = dis(gen);
 	}
 }
 
-std::vector<Matrix::value_type> Matrix::multiply(const std::vector<value_type>& vector) const {
-	if (cols_ != vector.size()) {
+std::vector<double> Matrix::multiply(const std::vector<double>& vector) const {
+	if (this->cols != vector.size()) {
 		throw std::runtime_error("Matrix multiply: dimension mismatch");
 	}
-	std::vector<value_type> result(rows_, value_type{});
-	for (size_type i = 0; i < rows_; ++i) {
+	std::vector<double> result(this->rows, double{});
+	for (std::size_t i = 0; i < this->rows; ++i) {
 		value_type sum = 0;
 
-		for (size_type j = 0; j < cols_; ++j) {
-			sum += data[i * cols_ + j] * vector[j];
+		for (std::size_t j = 0; j < this->cols; ++j) {
+			sum += data[i * this->cols + j] * vector[j];
 		}
 
 		result[i] = sum;
@@ -50,16 +51,16 @@ std::vector<Matrix::value_type> Matrix::multiply(const std::vector<value_type>& 
 	return result;
 }
 
-std::vector<Matrix::value_type> Matrix::multiplyTransposed(const std::vector<value_type>& vector) const {
-	if (cols_ != vector.size()) {
+std::vector<double> Matrix::multiplyTransposed(const std::vector<double>& vector) const {
+	if (this->cols != vector.size()) {
 		throw std::runtime_error("Matrix multiply: dimension mismatch");
 	}
-	std::vector<value_type> result(rows_, value_type{});
-	for (size_type i = 0; i < rows_; ++i) {
-		value_type sum = 0;
+	std::vector<std::size_t> result(this->rows, double{});
+	for (std::size_t i = 0; i < this->rows; ++i) {
+		std::size_t sum = 0;
 
-		for (size_type j = 0; j < cols_; ++j) {
-			sum += data[i * cols_ + j] + vector[j];
+		for (std::size_t j = 0; j < this->cols; ++j) {
+			sum += data[i * this->cols + j] + vector[j];
 		}
 
 		result[i] = sum;
@@ -68,34 +69,34 @@ std::vector<Matrix::value_type> Matrix::multiplyTransposed(const std::vector<val
 	return result;
 }
 
-void Matrix::addToVector(std::vector<value_type>& a, const std::vector<value_type>& b) {
-	if (a.size() != b.size()) {
+void Matrix::addToVector(std::vector<double>& firstVector, const std::vector<double>& secondVector) {
+	if (firstVector.size() != secondVector.size()) {
 		throw std::runtime_error("addToVector: size mismatch");
 	}
 
-	for (size_type i = 0; i < a.size(); i++) {
-		a[i] += b[i];
+	for (std::size_t i = 0; i < firstVector.size(); i++) {
+		firstVector[i] += secondVector[i];
 	}
 }
 
-std::ostream& operator<<(std::ostream& os, const Matrix& m) {
-	for (Matrix::size_type i = 0; i < m.rows_; ++i) {
-		for (Matrix::size_type j = 0; j < m.cols_; ++j) {
-			os << m.data[i * m.cols_ + j] << ' ';
+std::ostream& operator<<(std::ostream& output, const Matrix& matrix) {
+	for (std::size_t i = 0; i < matrix.rows; ++i) {
+		for (std::size_t j = 0; j < matrix.cols; ++j) {
+			output << matrix.data[i * matrix.cols + j] << ' ';
 		}
-		os << '\n';
+		output << '\n';
 	}
 
-	return os;
+	return output;
 }
 
-std::istream& operator>>(std::istream& is, Matrix& m) {
-	for (auto& value : m.data) {
-		is >> value;
-		if (!is) {
+std::istream& operator>>(std::istream& input, Matrix& matrix) {
+	for (auto& value : matrix.data) {
+		input >> value;
+		if (!input) {
 			break;
 		}
 	}
 
-	return is;
+	return input;
 }
