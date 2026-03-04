@@ -1,5 +1,4 @@
 #pragma once
-
 #include <vector>
 #include <cmath>
 #include <stdexcept>
@@ -26,6 +25,6 @@ public:
 	double derivative(double x) const noexcept;
 
 private:
-	Activation type_;
-	double alpha_;
+	Activation type;
+	double alpha;
 };
