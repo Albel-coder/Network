@@ -1,15 +1,17 @@
 #include "ActivateFunction.h"
 
 ActivateFunction::ActivateFunction(Activation type, double alpha)
-	: type_(type), alpha_(alpha)
-{}
+{
+   this->type = type;
+   this->alpha = alpha;
+}
 
 void ActivateFunction::setType(Activation type) noexcept {
-	type_ = type;
+	this->type = type;
 }
 
 void ActivateFunction::setAlpha(double alpha) noexcept {
-	alpha_ = alpha;
+	this->alpha = alpha;
 }
 
 void ActivateFunction::apply(std::vector<double>& values) const {
@@ -20,14 +22,14 @@ void ActivateFunction::apply(std::vector<double>& values) const {
 
 void ActivateFunction::applyDerivative(std::vector<double>& values) const {
 	for (double& y : values) {
-		switch (type_)
+		switch (type)
 		{
 		case Activation::Sigmoid:
 			y = y * (1.0 - y);
 			break;
 		case Activation::ReLU:
 			if (y < 0.0 || y > 1.0) {
-				y = alpha_;
+				y = alpha;
 			}
 			else {
 				y = 1.0;
@@ -35,7 +37,7 @@ void ActivateFunction::applyDerivative(std::vector<double>& values) const {
 			break;
 		case Activation::Tanh:
 			if (y < 0.0) {
-				y = alpha_ * (1.0 - y * y);
+				y = alpha * (1.0 - y * y);
 			}
 			else {
 				y = 1.0 - y * y;
@@ -48,30 +50,30 @@ void ActivateFunction::applyDerivative(std::vector<double>& values) const {
 }
 
 double ActivateFunction::operator()(double x) const noexcept {
-	switch (type_)
+	switch (type)
 	{
 	case Activation::Sigmoid:
 		return 1.0 / (1.0 + std::exp(-x));
 	case Activation::ReLU:
 		if (x < 0.0) {
-			return x * alpha_;
+			return x * alpha;
 		}
 		else if (x <= 1.0) {
 			return x;
 		}
 		else {
-			return 1.0 + alpha_ * (x - 1.0);
+			return 1.0 + alpha * (x - 1.0);
 		}
 	case Activation::Tanh:
 	{
 		double ex = std::exp(x);
 		double emx = std::exp(-x);
-		double tanh_val = (ex - emx) / (ex + emx);
+		double tanhValue = (ex - emx) / (ex + emx);
 		if (x < 0.0) {
-			return alpha_ * tanh_val;
+			return alpha * tanhValue;
 		}
 		else {
-			return tanh_val;
+			return tanhValue;
 		}
 	}
 	default:
@@ -80,14 +82,14 @@ double ActivateFunction::operator()(double x) const noexcept {
 }
 
 double ActivateFunction::derivative(double x) const noexcept {
-	switch (type_)
+	switch (type)
 	{
 	case Activation::Sigmoid:
-		double s = 1.0 / (1.0 + std::exp(-x));
-		return s * (1.0 - s);
+		double sigmoid = 1.0 / (1.0 + std::exp(-x));
+		return sigmoid * (1.0 - sigmoid);
 	case Activation::ReLU:
 		if (x < 0.0 || x > 1.0) {
-			return alpha_;
+			return alpha;
 		}
 		else {
 			return 1.0;
@@ -95,8 +97,8 @@ double ActivateFunction::derivative(double x) const noexcept {
 	case Activation::Tanh:
 		double th = operator()(x);
 		if (x < 0.0) {
-			double tanh_x = th / alpha_;
-			return alpha_ * (1.0 - tanh_x * tanh_x);
+			double tanhX = th / alpha;
+			return alpha * (1.0 - tanhX * tanhX);
 		}
 		else {
 			return 1.0 - th * th;
