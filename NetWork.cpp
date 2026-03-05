@@ -3,99 +3,100 @@
 #include <algorithm>
 #include <cmath>
 
-NetWork::NetWork(const std::vector<unsigned short>& layerSizes, Activation activateFunction, double alpha)
-	: sizes_(layerSizes),
-	activateFunction_(activateFunction, alpha) {
+NetWork::NetWork(const std::vector<unsigned short>& layerSizes, Activation activateFunction, double alpha) {
 
-	if (sizes_.size() < 2) {
+  this->sizes;
+  this->activateFunction = Activation::Sigmoid;
+
+	if (sizes.size() < 2) {
 		throw std::invalid_argument("NetWork must at least 2 layers");
 	}
 
-	const size_t numLayers = sizes_.size();
-	weights_.reserve(numLayers - 1);
-	biases_.resize(numLayers - 1);
-	neurons_.resize(numLayers);
-	errors_.resize(numLayers);
+	const std::size_t layersCount = sizes.size();
+	weights.reserve(layersCount - 1);
+	biases.resize(layersCount - 1);
+	neurons.resize(layersCount);
+	errors.resize(layersCount);
 
-	for (size_t i = 0; i < numLayers; ++i) {
-		neurons_[i].resize(sizes_[i], 0.0);
-		errors_[i].resize(sizes_[i], 0.0);
+	for (std::size_t i = 0; i < layersCount; ++i) {
+		neurons[i].resize(sizes[i], 0.0);
+		errors[i].resize(sizes[i], 0.0);
 	}
 
 	randomInit();
 }
 
 void NetWork::input(const std::vector<double>& values) {
-	if (values.size() != sizes_[0]) {
+	if (values.size() != sizes[0]) {
 		throw std::invalid_argument("Input size mismatch");
 	}
 
-	std::copy(values.begin(), values.end(), neurons_[0].begin());
+	std::copy(values.begin(), values.end(), neurons[0].begin());
 }
 
 unsigned short NetWork::forwardFeed() {
-	const size_t numLayers = sizes_.size();
-	for (size_t layer = 1; layer < numLayers; ++layer) {
-		std::vector<double> product = weights_[layer - 1].multiply(neurons_[layer - 1]);
+	const std::size_t layersCount = sizes.size();
+	for (std::size_t layer = 1; layer < layersCount; ++layer) {
+		std::vector<double> product = weights[layer - 1].multiply(neurons[layer - 1]);
 
-		Matrix::addToVector(product, biases_[layer - 1]);
+		Matrix::addToVector(product, biases[layer - 1]);
 
-		activateFunction_.apply(product);
+		activateFunction.apply(product);
 
-		neurons_[layer].swap(product);
+		neurons[layer].swap(product);
 	}
 
-	return argMax(neurons_.back());
+	return argMax(neurons.back());
 }
 
 void NetWork::backPropagation(unsigned short expected) {
-	const size_t L = sizes_.size() - 1;
-	const size_t outputSize = sizes_[L];
+	const std::size_t layersCount = sizes.size() - 1;
+	const std::size_t outputSize = sizes[layersCount];
 
 	std::vector<double> rawError(outputSize);
-	for (size_t i = 0; i < outputSize; ++i) {
+	for (std::size_t i = 0; i < outputSize; ++i) {
 		if (i == expected) {
-			rawError[i] = 1.0 - neurons_[L][i];
+			rawError[i] = 1.0 - neurons[layersCount][i];
 		}
 		else {
-			rawError[i] = -neurons_[L][i];
+			rawError[i] = -neurons[layersCount][i];
 		}
 	}
 
-	std::vector<double> derivativeOutput = neurons_[L];
-	activateFunction_.applyDerivative(derivativeOutput);
+	std::vector<double> derivativeOutput = neurons[layersCount];
+	activateFunction.applyDerivative(derivativeOutput);
 
-	errors_[L].resize(outputSize);
-	for (size_t i = 0; i < outputSize; ++i) {
-		errors_[L][i] = rawError[i] * derivativeOutput[i];
+	errors[layersCount].resize(outputSize);
+	for (std::size_t i = 0; i < outputSize; ++i) {
+		errors[layersCount][i] = rawError[i] * derivativeOutput[i];
 	}
 
-	for (size_t layer = L; layer > 0; --layer) {
-		std::vector<double> prevError = weights_[layer - 1].multiplyTransposed(errors_[layer]);
+	for (std::size_t layer = layersCount; layer > 0; --layer) {
+		std::vector<double> previousError = weights[layer - 1].multiplyTransposed(errors[layer]);
 	
-		std::vector<double> derivative = neurons_[layer - 1];
-		activateFunction_.applyDerivative(derivative);
+		std::vector<double> derivative = neurons[layer - 1];
+		activateFunction.applyDerivative(derivative);
 
-		errors_[layer - 1].resize(sizes_[layer - 1]);
-		for (size_t i = 0; i < sizes_[layer - 1]; ++i) {
-			errors_[layer - 1][i] = prevError[i] * derivative[i];
+		errors[layer - 1].resize(sizes[layer - 1]);
+		for (std::size_t i = 0; i < sizes[layer - 1]; ++i) {
+			errors[layer - 1][i] = previousError[i] * derivative[i];
 		}
 	}
 }
 
 void NetWork::weightUpdater(double learningRate) {
-	for (size_t layer = 0; layer < weights_.size(); ++layer) {
-		const auto& prevNeurons = neurons_[layer];
-		const auto& delta = errors_[layer + 1];
+	for (std::size_t layer = 0; layer < weights.size(); ++layer) {
+		const auto& previousNeurons = neurons[layer];
+		const auto& delta = errors[layer + 1];
 
-		for (size_t i = 0; i < weights_[layer].rows(); ++i) {
-			for (size_t j = 0; j < weights_[layer].cols(); ++j) {
-				weights_[layer](i, j) += learningRate * prevNeurons[j] * delta[i];
+		for (std::size_t i = 0; i < weights[layer].rows(); ++i) {
+			for (std::size_t j = 0; j < weights[layer].cols(); ++j) {
+				weights[layer](i, j) += learningRate * previousNeurons[j] * delta[i];
 			}
 		}
 
-		for (size_t i = 0; i < biases_[layer].size(); ++i) {
-			biases_[layer][i] += learningRate * delta[i];
+		for (std::size_t i = 0; i < biases[layer].size(); ++i) {
+			biases[layer][i] += learningRate * delta[i];
 		}
 	}
 }
@@ -106,20 +107,20 @@ void NetWork::save(const std::string& filename) const {
 		throw std::runtime_error("Cannot open file for writing: " + filename);
 	}
 
-	for (auto& size : sizes_) {
+	for (auto& size : sizes) {
 		fout << size << ' ';
 	}
 	fout << '/n';
 
-	for (const auto& weight : weights_) {
-		for (size_t i = 0; i < weight.rows(); ++i) {
-			for (size_t j = 0; j < weight.cols(); ++j) {
+	for (const auto& weight : weights) {
+		for (std::size_t i = 0; i < weight.rows(); ++i) {
+			for (std::size_t j = 0; j < weight.cols(); ++j) {
 				fout << weight(i, j) << ' ';
 			}
 		}
 	}
 
-	for (const auto& bias : biases_) {
+	for (const auto& bias : biases) {
 		for (double value : bias) {
 			fout << value << ' ';
 		}
@@ -136,21 +137,21 @@ void NetWork::load(const std::string& filename) {
 
 	std::vector<unsigned short> loadedSizes;
 	unsigned short size;
-	for (size_t i = 0; i < sizes_.size(); ++i) {
-		if (!(fin >> size) || size != sizes_[i]) {
+	for (std::size_t i = 0; i < sizes.size(); ++i) {
+		if (!(fin >> size) || size != sizes[i]) {
 			throw std::runtime_error("Layer size matmatch in file");
 		}
 	}
 
-	for (auto& weight : weights_) {
-		for (size_t i = 0; i < weight.rows(); ++i) {
-			for (size_t j = 0; j < weight.cols(); ++j) {
+	for (auto& weight : weights) {
+		for (std::size_t i = 0; i < weight.rows(); ++i) {
+			for (std::size_t j = 0; j < weight.cols(); ++j) {
 				fin >> weight(i, j);
 			}
 		}
 	}
 
-	for (auto& bias : biases_) {
+	for (auto& bias : biases) {
 		for (double& value : bias) {
 			fin >> value;
 		}
@@ -167,9 +168,9 @@ void NetWork::printConfig() const {
 		std::cout << '*';
 	}
 
-	std::cout << "/nNetWork has " << sizes_.data() << "layers/nSizes: ";
+	std::cout << "/nNetWork has " << sizes.data() << "layers/nSizes: ";
 
-	for (auto size : sizes_) {
+	for (auto size : sizes) {
 		std::cout << size << ' ';
 	}
 
@@ -183,12 +184,12 @@ void NetWork::printConfig() const {
 }
 
 void NetWork::printValues(unsigned short layer) const {
-	if (layer >= sizes_.size()) {
+	if (layer >= sizes.size()) {
 		throw std::out_of_range("Layer index out of range");
 	}
 
-	for (size_t i = 0; i < neurons_[layer].size(); ++i) {
-		std::cout << i << " " << neurons_[layer][i] << "\n";
+	for (std::size_t i = 0; i < neurons[layer].size(); ++i) {
+		std::cout << i << " " << neurons[layer][i] << "\n";
 	}
 }
 
@@ -199,25 +200,25 @@ unsigned short NetWork::argMax(const std::vector<double>& vector) const {
 }
 
 void NetWork::randomInit() {
-	static std::random_device rd;
-	static std::mt19937 gen(rd());
+	static std::random_device random;
+	static std::mt19937 gen(random());
 
 	std::uniform_real_distribution<double> dist(0.0, 0.1);
 
-	for (size_t i = 0; i < sizes_.size() - 1; ++i) {
-		Matrix w(sizes_[i + 1], sizes_[i]);
-		w.random();
+	for (std::size_t i = 0; i < sizes.size() - 1; ++i) {
+		Matrix weight(sizes[i + 1], sizes[i]);
+		weight.random();
 
-		for (size_t r = 0; r < w.rows(); ++r) {
-			for (size_t c = 0; c < w.cols(); ++c) {
-				w(r, c) *= (0.05 / (sizes_[i] + 45.0));
+		for (std::size_t row = 0; row < weight.rows(); ++row) {
+			for (std::size_t column = 0; column < weight.cols(); ++column) {
+				weight(row, column) *= (0.05 / (sizes[i] + 45.0));
 			}
 		}
-		weights_.push_back(std::move(w));
+		weights.push_back(std::move(weight));
 
-		biases_[i].resize(sizes_[i + 1]);
-		for (size_t j = 0; j < sizes_[i + 1]; ++j) {
-			biases_[i][j] = dist(gen) * (0.05 / (sizes_[i] + 20.0));
+		biases[i].resize(sizes[i + 1]);
+		for (std::size_t j = 0; j < sizes[i + 1]; ++j) {
+			biases[i][j] = dist(gen) * (0.05 / (sizes[i] + 20.0));
 		}
 	}
 }
