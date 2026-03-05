@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Matrix.h"
 #include "ActivateFunction.h"
 #include <vector>
@@ -36,14 +35,14 @@ public:
 	void printValues(unsigned short layer) const;
 
 private:
-	std::vector<unsigned short> sizes_;
-	ActivateFunction activateFunction_;
+	std::vector<unsigned short> sizes;
+	ActivateFunction activateFunction;
 
-	std::vector<Matrix> weights_;
-	std::vector<std::vector<double>> biases_;
+	std::vector<Matrix> weights;
+	std::vector<std::vector<double>> biases;
 
-	std::vector<std::vector<double>> neurons_;
-	std::vector<std::vector<double>> errors_;
+	std::vector<std::vector<double>> neurons;
+	std::vector<std::vector<double>> errors;
 
 	unsigned short argMax(const std::vector<double>& vector) const;
 
