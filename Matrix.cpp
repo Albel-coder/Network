@@ -3,24 +3,24 @@
 #include <stdexcept>
 
 Matrix::Matrix(std::size_t rows, std::size_t cols, double init)
-	: data(rows * cols, init), this->rows(rows), this->cols(cols) {
+	: data(rows * cols, init), rows(rows), cols(cols) {
 	
 	if (rows == 0 || cols == 0) {
 		data.clear();
-		this->rows = 0;
-   this->cols = 0;
+		rows = 0;
+		cols = 0;
 	}
 }
 
 double& Matrix::operator()(std::size_t i, std::size_t j) {
-	if (i >= this->rows || j >= this->cols) 
+	if (i >= this->rows() || j >= this->cols()) 
 		throw std::out_of_range("Matrix index out of range");
 
-	return data[i * this->cols + j];
+	return data[i * this->cols() + j];
 }
 
 const double& Matrix::operator()(std::size_t i, std::size_t j) const {
-	return data[i * this->cols + j];
+	return data[i * this->cols() + j];
 }
 
 void Matrix::random() {
@@ -34,15 +34,15 @@ void Matrix::random() {
 }
 
 std::vector<double> Matrix::multiply(const std::vector<double>& vector) const {
-	if (this->cols != vector.size()) {
+	if (this->cols() != vector.size()) {
 		throw std::runtime_error("Matrix multiply: dimension mismatch");
 	}
-	std::vector<double> result(this->rows, double{});
-	for (std::size_t i = 0; i < this->rows; ++i) {
-		value_type sum = 0;
+	std::vector<double> result(this->rows(), double{});
+	for (std::size_t i = 0; i < this->rows(); ++i) {
+		double sum = 0;
 
-		for (std::size_t j = 0; j < this->cols; ++j) {
-			sum += data[i * this->cols + j] * vector[j];
+		for (std::size_t j = 0; j < this->cols(); ++j) {
+			sum += data[i * this->cols() + j] * vector[j];
 		}
 
 		result[i] = sum;
@@ -52,15 +52,15 @@ std::vector<double> Matrix::multiply(const std::vector<double>& vector) const {
 }
 
 std::vector<double> Matrix::multiplyTransposed(const std::vector<double>& vector) const {
-	if (this->cols != vector.size()) {
+	if (this->cols() != vector.size()) {
 		throw std::runtime_error("Matrix multiply: dimension mismatch");
 	}
-	std::vector<std::size_t> result(this->rows, double{});
-	for (std::size_t i = 0; i < this->rows; ++i) {
+	std::vector<double> result(this->rows(), double{});
+	for (std::size_t i = 0; i < this->rows(); ++i) {
 		std::size_t sum = 0;
 
-		for (std::size_t j = 0; j < this->cols; ++j) {
-			sum += data[i * this->cols + j] + vector[j];
+		for (std::size_t j = 0; j < this->cols(); ++j) {
+			sum += data[i * this->cols() + j] + vector[j];
 		}
 
 		result[i] = sum;
@@ -80,9 +80,9 @@ void Matrix::addToVector(std::vector<double>& firstVector, const std::vector<dou
 }
 
 std::ostream& operator<<(std::ostream& output, const Matrix& matrix) {
-	for (std::size_t i = 0; i < matrix.rows; ++i) {
-		for (std::size_t j = 0; j < matrix.cols; ++j) {
-			output << matrix.data[i * matrix.cols + j] << ' ';
+	for (std::size_t i = 0; i < matrix.rows(); ++i) {
+		for (std::size_t j = 0; j < matrix.cols(); ++j) {
+			output << matrix.data[i * matrix.cols() + j] << ' ';
 		}
 		output << '\n';
 	}
